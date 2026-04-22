@@ -1,0 +1,16 @@
+{
+  "name": "skillz-marketplace",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": ["frontend"],
+  "scripts": {
+    "build": "npm --workspace frontend run build",
+    "start": "npm --workspace frontend run start",
+    "dev": "npm --workspace frontend run dev"
+  },
+  "dependencies": {
+    "next": "14.2.13",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  }
+}
