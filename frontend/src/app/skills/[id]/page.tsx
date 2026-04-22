@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { notFound } from 'next/navigation';
 import { api } from '@/lib/api';
 import { ExecutePanel } from './ExecutePanel';
 import { SafetyLabel } from '@/components/SafetyLabel';
@@ -15,7 +16,12 @@ import {
 export const dynamic = 'force-dynamic';
 
 export default async function SkillDetailPage({ params }: { params: { id: string } }) {
-  const skill: any = await api.getSkill(params.id);
+  let skill: any;
+  try {
+    skill = await api.getSkill(params.id);
+  } catch {
+    notFound();
+  }
   const reviews = await api.reviewsForSkill(params.id).catch(() => []);
   const audits = await api.auditForSkill(params.id).catch(() => []);
   const level = safetyLevel(skill);

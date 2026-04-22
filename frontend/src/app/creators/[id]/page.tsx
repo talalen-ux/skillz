@@ -1,3 +1,4 @@
+import { notFound } from 'next/navigation';
 import { api } from '@/lib/api';
 import { SkillCard } from '@/components/SkillCard';
 import { Stars } from '@/components/Stars';
@@ -6,7 +7,12 @@ import { formatUsage } from '@/lib/trust';
 export const dynamic = 'force-dynamic';
 
 export default async function CreatorPage({ params }: { params: { id: string } }) {
-  const c: any = await api.getCreator(params.id);
+  let c: any;
+  try {
+    c = await api.getCreator(params.id);
+  } catch {
+    notFound();
+  }
   const verified = c.stats.auditPassRate >= 0.8 && c.stats.totalSkills >= 1;
 
   return (
