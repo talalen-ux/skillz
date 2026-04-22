@@ -8,55 +8,84 @@ html {
 
 body {
   min-height: 100vh;
-  background: #0a0a0f;
-  color: #f5f5f7;
-  font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Inter, Roboto, sans-serif;
+  background: #0a0a0c;
+  color: #fafaf9;
+  font-family: var(--font-body), ui-sans-serif, system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  font-feature-settings: 'ss01', 'cv11';
 }
 
 ::selection {
-  background: rgba(99, 102, 241, 0.35);
+  background: rgba(212, 163, 115, 0.35);
+  color: #fafaf9;
 }
 
 @layer components {
-  .glass {
-    @apply rounded-2xl border border-line bg-card-grad backdrop-blur;
+  /* Subtle card surface with hairline border — the workhorse. */
+  .surface {
+    @apply rounded-2xl border border-line bg-bg-raised;
   }
 
-  .glass-strong {
-    @apply rounded-2xl border border-line bg-bg-raised/80 backdrop-blur-md;
+  /* Full-bleed decorative accent wash. Used sparingly behind hero. */
+  .surface-glow {
+    @apply relative overflow-hidden rounded-2xl border border-line bg-bg-raised;
+  }
+  .surface-glow::before {
+    content: '';
+    @apply pointer-events-none absolute inset-0 bg-accent-radial opacity-70;
   }
 
-  .btn-primary {
-    @apply inline-flex items-center justify-center rounded-full px-5 py-2.5 text-sm font-medium
-           bg-white text-bg-base transition hover:bg-white/90
-           shadow-[0_8px_24px_-8px_rgba(255,255,255,0.35)];
-  }
-
-  .btn-secondary {
-    @apply inline-flex items-center justify-center rounded-full px-5 py-2.5 text-sm font-medium
-           border border-line-strong text-text-primary transition hover:bg-white/5;
-  }
-
-  .chip {
-    @apply inline-flex items-center gap-1.5 rounded-full border border-line px-2.5 py-1 text-xs text-text-secondary;
+  .hairline {
+    @apply border-line;
   }
 
   .skeleton {
-    background: linear-gradient(90deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.09) 50%, rgba(255,255,255,0.04) 100%);
-    background-size: 1000px 100%;
+    background: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.03) 0%,
+      rgba(255, 255, 255, 0.07) 50%,
+      rgba(255, 255, 255, 0.03) 100%
+    );
+    background-size: 1200px 100%;
     @apply animate-shimmer rounded-md;
   }
 }
 
-/* Tidy scrollbars in the dark theme */
-::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-track { background: transparent; }
+@layer utilities {
+  /* Small-caps eyebrow label — semantic alias for consistency. */
+  .eyebrow {
+    @apply text-[11px] font-medium uppercase tracking-eyebrow text-fg-secondary;
+  }
+  /* The display-headline weight mix — use on the `mute` span inside <h1>. */
+  .mute-weight {
+    @apply font-normal text-fg-secondary;
+  }
+}
+
+/* Reduced-motion overrides */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0ms !important;
+  }
+}
+
+/* Subtle, unobtrusive scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
 ::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.08);
-  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255,255,255,0.15);
+  background: rgba(255, 255, 255, 0.14);
 }

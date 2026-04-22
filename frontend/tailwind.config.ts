@@ -6,66 +6,81 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: [
+        sans: ['var(--font-body)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        display: [
+          'var(--font-display)',
+          'var(--font-body)',
           'ui-sans-serif',
           'system-ui',
-          '-apple-system',
-          'Segoe UI',
-          'Inter',
-          'Roboto',
           'sans-serif',
         ],
       },
       colors: {
+        // Warm dark surfaces
         bg: {
-          base: '#0a0a0f',
-          raised: '#12121a',
-          sunken: '#07070b',
+          DEFAULT: '#0A0A0C',
+          raised: '#111113',
+          elevated: '#16161A',
+          sunken: '#070709',
         },
         line: {
-          soft: 'rgba(255,255,255,0.06)',
-          DEFAULT: 'rgba(255,255,255,0.10)',
-          strong: 'rgba(255,255,255,0.18)',
+          DEFAULT: '#1F1F22',
+          strong: '#2A2A2E',
+          soft: 'rgba(255,255,255,0.04)',
         },
-        text: {
-          primary: '#f5f5f7',
-          secondary: '#a1a1aa',
-          muted: '#71717a',
+        fg: {
+          DEFAULT: '#FAFAF9',
+          secondary: '#A8A29E',
+          muted: '#78716C',
+          dim: '#57534E',
         },
-        brand: {
-          50: '#eef2ff',
-          400: '#818cf8',
-          500: '#6366f1',
-          600: '#4f46e5',
+        // Burnished bronze/copper — brand accent
+        accent: {
+          DEFAULT: '#C68660',
+          glow: '#D4A373',
+          deep: '#8B5A3D',
+          foreground: '#0A0A0C',
         },
+        // Rating + highlight gold (distinct from accent)
+        gold: '#F5B848',
+        // Semantic trust colors — preserved, used only for safety signals
         trust: {
           safe: '#22c55e',
           caution: '#f59e0b',
           risk: '#ef4444',
         },
       },
+      backgroundImage: {
+        'accent-radial':
+          'radial-gradient(90% 70% at 70% 40%, rgba(212,163,115,0.18) 0%, rgba(212,163,115,0) 55%)',
+        'icon-tile':
+          'linear-gradient(160deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.01) 40%, rgba(0,0,0,0.3) 100%)',
+      },
+      letterSpacing: {
+        eyebrow: '0.24em',
+      },
       borderRadius: {
         '2xl': '1rem',
-        '3xl': '1.5rem',
-      },
-      boxShadow: {
-        glow: '0 0 0 1px rgba(255,255,255,0.06), 0 10px 30px -10px rgba(0,0,0,0.6)',
-        ring: '0 0 0 1px rgba(99,102,241,0.4), 0 0 30px -5px rgba(99,102,241,0.35)',
-      },
-      backgroundImage: {
-        'hero-grad':
-          'radial-gradient(120% 80% at 50% -10%, rgba(99,102,241,0.25) 0%, rgba(99,102,241,0) 55%), radial-gradient(80% 60% at 100% 0%, rgba(168,85,247,0.18) 0%, rgba(168,85,247,0) 50%)',
-        'card-grad':
-          'linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%)',
+        '3xl': '1.25rem',
       },
       keyframes: {
         shimmer: {
           '0%': { backgroundPosition: '-500px 0' },
           '100%': { backgroundPosition: '500px 0' },
         },
+        'fade-in': {
+          '0%': { opacity: '0', transform: 'translateY(8px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        'orbit-slow': {
+          '0%': { transform: 'rotate(0deg)' },
+          '100%': { transform: 'rotate(360deg)' },
+        },
       },
       animation: {
         shimmer: 'shimmer 1.6s linear infinite',
+        'fade-in': 'fade-in 500ms ease-out both',
+        'orbit-slow': 'orbit-slow 60s linear infinite',
       },
     },
   },

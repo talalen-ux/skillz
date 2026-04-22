@@ -12,7 +12,7 @@ export function TrustBadges({
   if (badges.length === 0) {
     return (
       <span
-        className="inline-flex items-center gap-1 rounded-full border border-line px-2 py-0.5 text-[11px] text-text-muted"
+        className="inline-flex items-center gap-1 rounded-full border border-line bg-bg-elevated px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.15em] text-fg-muted"
         title="Not yet verified — try at your own discretion."
       >
         <span>⚠</span> Not verified
@@ -25,9 +25,9 @@ export function TrustBadges({
         <span
           key={b.label}
           title={b.tooltip}
-          className={`inline-flex items-center gap-1 rounded-full border border-line bg-white/[0.03] ${
-            compact ? 'px-2 py-0.5 text-[11px]' : 'px-2.5 py-1 text-xs'
-          } text-text-secondary`}
+          className={`inline-flex items-center gap-1 rounded-full border border-line bg-bg-elevated ${
+            compact ? 'px-2 py-0.5 text-[10px]' : 'px-2.5 py-1 text-[11px]'
+          } font-medium uppercase tracking-[0.15em] text-fg-secondary`}
         >
           <span aria-hidden>{b.icon}</span>
           <span>{b.label}</span>

@@ -4,6 +4,8 @@ import { useMemo, useState } from 'react';
 import { api } from '@/lib/api';
 import { describePermissions } from '@/lib/trust';
 import { PermissionsPreview } from '@/components/PermissionsPreview';
+import { Button } from '@/components/ui/Button';
+import { Chip } from '@/components/ui/Chip';
 
 type Phase = 'edit' | 'confirm' | 'running' | 'done';
 
@@ -44,68 +46,75 @@ export function ExecutePanel({
   }
 
   return (
-    <div className="glass p-6">
+    <div className="surface sticky top-24 p-6">
       <div className="flex items-center justify-between gap-3">
-        <h3 className="text-base font-semibold">Run this skill</h3>
-        {isFree && (
-          <span className="chip border-emerald-500/30 bg-emerald-500/10 text-emerald-300">
-            Free to run
-          </span>
-        )}
+        <h3 className="font-display text-lg font-semibold text-fg">Run this skill</h3>
+        {isFree && <Chip tone="accent">Free to run</Chip>}
       </div>
 
       {phase === 'edit' && (
-        <div className="mt-4 space-y-4">
-          <div>
-            <label className="text-xs text-text-secondary">Your user ID</label>
+        <div className="mt-5 space-y-5">
+          <label className="block">
+            <span className="text-xs text-fg-secondary">Your user ID</span>
             <input
               value={userId}
               onChange={(e) => setUserId(e.target.value)}
               placeholder="Any existing user ID"
-              className="mt-1 w-full rounded-lg border border-line bg-bg-sunken/60 px-3 py-2 text-sm outline-none focus:border-line-strong"
+              className="mt-1 w-full rounded-xl border border-line bg-bg px-3 py-2 text-sm outline-none transition focus:border-line-strong"
             />
-            <p className="mt-1 text-[11px] text-text-muted">
+            <p className="mt-1 text-[11px] text-fg-muted">
               MVP shim — reviews require this to prove you ran the skill.
             </p>
-          </div>
-          <div>
-            <label className="text-xs text-text-secondary">What should it work on?</label>
+          </label>
+          <label className="block">
+            <span className="text-xs text-fg-secondary">What should it work on?</span>
             <textarea
               value={inputs}
               onChange={(e) => setInputs(e.target.value)}
               rows={5}
-              className="mt-1 w-full rounded-lg border border-line bg-bg-sunken/60 px-3 py-2 font-mono text-xs outline-none focus:border-line-strong"
+              className="mt-1 w-full rounded-xl border border-line bg-bg px-3 py-2 font-mono text-xs outline-none transition focus:border-line-strong"
             />
-            <p className="mt-1 text-[11px] text-text-muted">
-              JSON. Example: <code className="rounded bg-white/5 px-1">{'{ "text": "..." }'}</code>
+            <p className="mt-1 text-[11px] text-fg-muted">
+              JSON. Example:{' '}
+              <code className="rounded bg-white/5 px-1">{'{ "text": "..." }'}</code>
             </p>
-          </div>
-          <button onClick={() => setPhase('confirm')} className="btn-primary w-full">
+          </label>
+          <Button onClick={() => setPhase('confirm')} className="w-full" trailingArrow>
             Continue
-          </button>
+          </Button>
+
+          <div className="pt-2">
+            <PermissionsPreview raw={permissions} heading="Permissions preview" />
+          </div>
         </div>
       )}
 
       {phase === 'confirm' && (
-        <div className="mt-4 space-y-4">
-          <div className="rounded-xl border border-line bg-bg-sunken/40 p-4">
-            <div className="text-xs uppercase tracking-wider text-text-muted">Before you run</div>
-            <p className="mt-1 text-sm text-text-primary">
+        <div className="mt-5 space-y-4">
+          <div className="rounded-xl border border-line bg-bg p-4">
+            <div className="text-[11px] uppercase tracking-[0.18em] text-fg-muted">
+              Before you run
+            </div>
+            <p className="mt-1.5 text-sm text-fg">
               <span className="font-medium">{skillName}</span> will:
             </p>
             <ul className="mt-3 space-y-2 text-sm">
               {perms.map((it) => {
                 const good = it.goodWhenAllowed ? it.allowed : !it.allowed;
-                const icon = good ? '✅' : it.allowed ? '⚠️' : '❌';
+                const glyph = good ? '✓' : it.allowed ? '!' : '×';
                 const color = good
-                  ? 'text-emerald-400'
+                  ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30'
                   : it.allowed
-                  ? 'text-amber-300'
-                  : 'text-text-muted';
+                  ? 'text-amber-300 bg-amber-500/10 border-amber-500/30'
+                  : 'text-fg-muted bg-bg border-line';
                 return (
                   <li key={it.key} className="flex items-start gap-2.5">
-                    <span className={color}>{icon}</span>
-                    <span className="text-text-primary">{it.label}</span>
+                    <span
+                      className={`mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full border text-[11px] font-bold ${color}`}
+                    >
+                      {glyph}
+                    </span>
+                    <span className="text-fg">{it.label}</span>
                   </li>
                 );
               })}
@@ -115,15 +124,13 @@ export function ExecutePanel({
           <div
             className={`rounded-xl border p-4 text-sm ${
               walletRisk || spendRisk
-                ? 'border-amber-500/40 bg-amber-500/5 text-amber-200'
-                : 'border-emerald-500/30 bg-emerald-500/5 text-emerald-200'
+                ? 'border-amber-500/40 bg-amber-500/10 text-amber-200'
+                : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-200'
             }`}
           >
-            {walletRisk || spendRisk ? (
-              <>⚠️ This skill requests wallet-related access. Review carefully.</>
-            ) : (
-              <>🔒 Your funds are safe. This skill cannot move assets.</>
-            )}
+            {walletRisk || spendRisk
+              ? 'This skill requests wallet-related access. Review carefully.'
+              : 'Your funds are safe. This skill cannot move assets.'}
           </div>
 
           {err && (
@@ -133,12 +140,16 @@ export function ExecutePanel({
           )}
 
           <div className="flex gap-2">
-            <button onClick={() => setPhase('edit')} className="btn-secondary flex-1">
+            <Button
+              onClick={() => setPhase('edit')}
+              variant="secondary"
+              className="flex-1"
+            >
               Back
-            </button>
-            <button onClick={reallyRun} className="btn-primary flex-1">
+            </Button>
+            <Button onClick={reallyRun} className="flex-1" trailingArrow>
               Confirm & run
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -148,12 +159,12 @@ export function ExecutePanel({
           <div className="skeleton h-3 w-2/3" />
           <div className="skeleton h-3 w-4/5" />
           <div className="skeleton h-3 w-1/2" />
-          <p className="mt-3 text-sm text-text-secondary">Running in a secure sandbox…</p>
+          <p className="mt-3 text-sm text-fg-secondary">Running in a secure sandbox…</p>
         </div>
       )}
 
       {phase === 'done' && (
-        <div className="mt-4 space-y-3">
+        <div className="mt-5 space-y-3">
           <div
             className={`rounded-xl border p-4 text-sm ${
               result?.status === 'SUCCEEDED'
@@ -164,33 +175,29 @@ export function ExecutePanel({
             }`}
           >
             {result?.status === 'SUCCEEDED'
-              ? "✅ Done! Here's the result."
+              ? "Done. Here's the result."
               : result?.status === 'BLOCKED'
-              ? "⛔ The sandbox blocked a disallowed action. You're safe."
-              : '⚠️ Something went wrong.'}
+              ? "The sandbox blocked a disallowed action. You're safe."
+              : 'Something went wrong.'}
           </div>
-          <pre className="max-h-64 overflow-auto rounded-xl border border-line bg-bg-sunken/60 p-3 text-xs">
+          <pre className="max-h-64 overflow-auto rounded-xl border border-line bg-bg p-3 text-xs text-fg-secondary">
             {JSON.stringify(result?.output ?? result?.error ?? result, null, 2)}
           </pre>
-          <div className="flex gap-2">
-            <button onClick={() => setPhase('edit')} className="btn-secondary flex-1">
-              Run again
-            </button>
-          </div>
-          <details className="text-xs text-text-muted">
-            <summary className="cursor-pointer hover:text-text-secondary">
+          <Button
+            onClick={() => setPhase('edit')}
+            variant="secondary"
+            className="w-full"
+          >
+            Run again
+          </Button>
+          <details className="text-xs text-fg-muted">
+            <summary className="cursor-pointer hover:text-fg-secondary">
               View technical details
             </summary>
-            <pre className="mt-2 max-h-72 overflow-auto rounded border border-line bg-bg-sunken/60 p-3 text-[11px]">
+            <pre className="mt-2 max-h-72 overflow-auto rounded-xl border border-line bg-bg p-3 text-[11px] text-fg-secondary">
               {JSON.stringify(result, null, 2)}
             </pre>
           </details>
-        </div>
-      )}
-
-      {phase === 'edit' && (
-        <div className="mt-6">
-          <PermissionsPreview raw={permissions} heading="Permissions preview" />
         </div>
       )}
     </div>

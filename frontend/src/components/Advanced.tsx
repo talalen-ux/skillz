@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { ChevronDown } from './ui/Icons';
 
 /** Disclosure block for power-user detail. Collapsed by default. */
 export function Advanced({
@@ -16,9 +17,12 @@ export function Advanced({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="text-xs font-medium text-text-secondary hover:text-text-primary"
+        className="inline-flex items-center gap-1.5 text-xs text-fg-secondary transition hover:text-fg"
       >
-        {open ? '− Hide advanced details' : `+ ${label}`}
+        <ChevronDown
+          className={`h-3.5 w-3.5 transition ${open ? 'rotate-180' : ''}`}
+        />
+        {open ? 'Hide advanced details' : label}
       </button>
       {open && <div className="mt-3">{children}</div>}
     </div>
