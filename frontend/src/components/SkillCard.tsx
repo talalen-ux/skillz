@@ -1,37 +1,69 @@
 import Link from 'next/link';
-import { Skill, certBadge } from '@/lib/api';
+import type { Skill } from '@/lib/api';
+import { Stars } from './Stars';
+import { SafetyLabel } from './SafetyLabel';
+import { TrustBadges } from './TrustBadges';
+import { formatUsage, safetyLevel } from '@/lib/trust';
 
 export function SkillCard({ skill }: { skill: Skill }) {
-  const cert = certBadge(skill.certification);
+  const level = safetyLevel(skill);
   const price = Number(skill.price);
   return (
     <Link
       href={`/skills/${skill.id}`}
-      className="block rounded-xl border border-zinc-200 bg-white p-5 transition hover:border-accent hover:shadow-sm"
+      className="group block rounded-2xl border border-line bg-card-grad p-5 transition hover:border-line-strong hover:shadow-glow"
     >
+      {/* Top row: name + category chip */}
       <div className="flex items-start justify-between gap-3">
-        <div>
-          <h3 className="text-base font-semibold">{skill.name}</h3>
-          <p className="mt-1 line-clamp-2 text-sm text-zinc-600">{skill.description}</p>
+        <div className="min-w-0">
+          <div className="text-[11px] font-medium uppercase tracking-wider text-text-muted">
+            {skill.category}
+          </div>
+          <h3 className="mt-1 truncate text-base font-semibold text-text-primary group-hover:text-white">
+            {skill.name}
+          </h3>
         </div>
-        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white ${cert.color}`}>
-          {cert.label}
-        </span>
+        <SafetyLabel level={level} size="sm" />
       </div>
-      <div className="mt-4 flex flex-wrap gap-2">
-        {skill.tags?.slice(0, 4).map((t) => (
-          <span key={t} className="rounded bg-zinc-100 px-2 py-0.5 text-[11px] text-zinc-700">
-            {t}
+
+      {/* Middle: plain-English description */}
+      <p className="mt-2.5 line-clamp-2 text-sm text-text-secondary">{skill.description}</p>
+
+      {/* Trust row */}
+      <div className="mt-4">
+        <TrustBadges cert={skill.certification} compact />
+      </div>
+
+      {/* Bottom: rating + usage + price + CTA */}
+      <div className="mt-5 flex items-center justify-between">
+        <div className="flex items-center gap-3 text-xs text-text-muted">
+          <span className="inline-flex items-center gap-1.5">
+            <Stars value={skill.ratingAvg} size={12} />
+            <span className="text-text-secondary">{skill.ratingAvg.toFixed(1)}</span>
           </span>
-        ))}
-      </div>
-      <div className="mt-4 flex items-center justify-between text-xs text-zinc-500">
-        <span>
-          ★ {skill.ratingAvg.toFixed(1)} ({skill.ratingCount}) · {skill.totalExecutions} runs
-        </span>
-        <span className="font-medium text-zinc-800">
-          {skill.isFree ? 'Free' : `$${price.toFixed(2)} / ${skill.pricingModel.toLowerCase()}`}
-        </span>
+          <span className="text-text-muted">
+            Used {formatUsage(skill.totalExecutions)} times
+          </span>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-sm font-medium">
+            {skill.isFree ? (
+              <span className="text-emerald-400">Free</span>
+            ) : skill.pricingModel === 'SUBSCRIPTION' ? (
+              <span>
+                ${price.toFixed(2)}
+                <span className="text-xs text-text-muted"> /mo</span>
+              </span>
+            ) : skill.pricingModel === 'PER_EXECUTION' ? (
+              <span>
+                ${price.toFixed(2)}
+                <span className="text-xs text-text-muted"> /run</span>
+              </span>
+            ) : (
+              <span>${price.toFixed(2)}</span>
+            )}
+          </span>
+        </div>
       </div>
     </Link>
   );

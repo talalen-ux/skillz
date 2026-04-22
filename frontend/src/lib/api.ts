@@ -75,18 +75,3 @@ export const api = {
   getCreator: (id: string) => req<any>(`/creators/${id}`),
   executionLogs: (id: string) => req<any>(`/executions/${id}/logs`),
 };
-
-export const certBadge = (c: Skill['certification']) => {
-  switch (c) {
-    case 'BATTLE_TESTED':
-      return { label: 'Battle Tested', color: 'bg-emerald-600' };
-    case 'SECURITY_AUDITED':
-      return { label: 'Security Audited', color: 'bg-emerald-500' };
-    case 'PERFORMANCE_VERIFIED':
-      return { label: 'Performance Verified', color: 'bg-blue-500' };
-    case 'FUNCTION_VERIFIED':
-      return { label: 'Function Verified', color: 'bg-amber-500' };
-    default:
-      return { label: 'Unverified', color: 'bg-zinc-500' };
-  }
-};

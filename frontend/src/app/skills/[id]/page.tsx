@@ -1,127 +1,275 @@
 import Link from 'next/link';
-import { api, certBadge } from '@/lib/api';
+import { api } from '@/lib/api';
 import { ExecutePanel } from './ExecutePanel';
+import { SafetyLabel } from '@/components/SafetyLabel';
+import { TrustBadges } from '@/components/TrustBadges';
+import { Stars } from '@/components/Stars';
+import { Advanced } from '@/components/Advanced';
+import {
+  formatUsage,
+  reliabilityLabel,
+  safetyLevel,
+  speedLabel,
+} from '@/lib/trust';
 
 export const dynamic = 'force-dynamic';
 
 export default async function SkillDetailPage({ params }: { params: { id: string } }) {
-  const skill = await api.getSkill(params.id);
+  const skill: any = await api.getSkill(params.id);
   const reviews = await api.reviewsForSkill(params.id).catch(() => []);
   const audits = await api.auditForSkill(params.id).catch(() => []);
-  const cert = certBadge(skill.certification);
+  const level = safetyLevel(skill);
   const price = Number(skill.price);
+
+  const highlights: string[] = (skill.tags ?? []).slice(0, 4);
 
   return (
     <div className="space-y-8">
-      <header className="rounded-2xl border border-zinc-200 bg-white p-6">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <div className="text-xs uppercase tracking-wider text-zinc-500">{skill.category}</div>
-            <h1 className="mt-1 text-2xl font-bold">{skill.name}</h1>
-            <p className="mt-2 max-w-2xl text-sm text-zinc-700">{skill.description}</p>
-            <p className="mt-3 text-xs text-zinc-500">
-              by{' '}
-              <Link href={`/creators/${skill.creator.id}`} className="text-accent">
+      <Breadcrumbs name={skill.name} />
+
+      {/* Hero */}
+      <section className="relative overflow-hidden rounded-3xl border border-line bg-card-grad p-8">
+        <div className="pointer-events-none absolute inset-0 bg-hero-grad opacity-40" />
+        <div className="relative flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
+          <div className="max-w-xl">
+            <div className="text-xs font-medium uppercase tracking-wider text-text-muted">
+              {skill.category}
+            </div>
+            <h1 className="mt-2 text-3xl font-semibold tracking-tight md:text-4xl">
+              {skill.name}
+            </h1>
+            <p className="mt-4 text-base text-text-secondary">{skill.description}</p>
+            <p className="mt-4 text-xs text-text-muted">
+              By{' '}
+              <Link href={`/creators/${skill.creator.id}`} className="text-text-secondary underline-offset-4 hover:underline">
                 {skill.creator.name}
-              </Link>{' '}
-              · v{skill.currentVersion ?? 1}
+              </Link>
+              {' · '}Version {skill.currentVersion ?? 1}
             </p>
           </div>
-          <div className="flex flex-col items-end gap-2 text-right">
-            <span className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-white ${cert.color}`}>
-              {cert.label}
-            </span>
-            <div className="text-sm">
+
+          <div className="flex flex-col items-start gap-3 md:items-end">
+            <SafetyLabel level={level} size="lg" />
+            <TrustBadges cert={skill.certification} />
+            <div className="mt-2 text-right">
               {skill.isFree ? (
-                <span className="font-semibold text-emerald-700">Free</span>
+                <div className="text-xl font-semibold text-emerald-400">Free</div>
               ) : (
-                <span className="font-semibold">
-                  ${price.toFixed(2)} <span className="text-xs text-zinc-500">/ {skill.pricingModel.toLowerCase()}</span>
-                </span>
+                <div className="text-xl font-semibold">
+                  ${price.toFixed(2)}
+                  <span className="text-xs text-text-muted">
+                    {' '}
+                    {skill.pricingModel === 'SUBSCRIPTION'
+                      ? '/ month'
+                      : skill.pricingModel === 'PER_EXECUTION'
+                      ? '/ run'
+                      : ''}
+                  </span>
+                </div>
               )}
             </div>
             {skill.killSwitch && (
-              <span className="rounded bg-red-100 px-2 py-0.5 text-[11px] font-bold text-red-700">
-                KILL-SWITCH ON
+              <span className="rounded-full border border-red-500/50 bg-red-500/10 px-3 py-1 text-xs font-semibold text-red-300">
+                Paused by admin
               </span>
             )}
           </div>
         </div>
-      </header>
-
-      <section className="grid grid-cols-1 gap-4 md:grid-cols-4">
-        <Stat label="Rating" value={`★ ${skill.ratingAvg.toFixed(1)}`} sub={`${skill.ratingCount} reviews`} />
-        <Stat label="Executions" value={skill.totalExecutions.toLocaleString()} />
-        <Stat label="Success rate" value={`${(skill.successRate * 100).toFixed(0)}%`} />
-        <Stat label="Avg latency" value={`${skill.avgLatencyMs} ms`} />
       </section>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <ExecutePanel skillId={skill.id} />
+      {/* What you get */}
+      <Section title="What you get">
+        <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          {highlights.length > 0 ? (
+            highlights.map((h) => (
+              <li key={h} className="glass flex items-start gap-3 p-4">
+                <span className="mt-0.5">✨</span>
+                <span className="text-sm text-text-primary capitalize">{h}</span>
+              </li>
+            ))
+          ) : (
+            <li className="glass p-4 text-sm text-text-secondary">
+              Consistent, sandboxed results from a single, simple call.
+            </li>
+          )}
+        </ul>
+      </Section>
 
-        <div className="rounded-xl border border-zinc-200 bg-white p-5">
-          <h3 className="mb-3 font-semibold">Required permissions</h3>
-          <pre className="max-h-64 overflow-auto rounded bg-zinc-50 p-3 text-xs">
-            {JSON.stringify(skill.permissionsRequired, null, 2)}
-          </pre>
-        </div>
-      </div>
+      {/* Trust & safety + Run side-by-side on desktop */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
+        <div className="space-y-6 lg:col-span-3">
+          <Section title="Trust & safety">
+            <div className="glass p-6">
+              <div className="flex flex-wrap items-center gap-3">
+                <SafetyLabel level={level} size="lg" />
+                <TrustBadges cert={skill.certification} />
+              </div>
 
-      <section>
-        <h2 className="mb-3 text-lg font-semibold">Audit results</h2>
-        {audits.length === 0 ? (
-          <p className="text-sm text-zinc-500">No audits run yet.</p>
-        ) : (
-          <ul className="space-y-2">
-            {audits.slice(0, 10).map((a: any) => (
-              <li key={a.id} className="rounded border border-zinc-200 bg-white p-3 text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="font-mono text-xs uppercase">{a.stage}</span>
-                  <span
-                    className={`rounded px-2 py-0.5 text-[10px] font-bold text-white ${
-                      a.passed ? 'bg-emerald-600' : 'bg-red-600'
-                    }`}
-                  >
-                    {a.passed ? 'PASS' : 'FAIL'}
-                  </span>
+              <p className="mt-4 max-w-xl text-sm text-text-secondary">
+                {level === 'safe'
+                  ? 'This skill has passed our automated safety checks. You can try it with confidence.'
+                  : level === 'caution'
+                  ? 'Some checks found minor issues. Read the permissions carefully before running.'
+                  : 'High-risk indicators detected. We recommend avoiding this skill or contacting the creator.'}
+              </p>
+
+              <Advanced label="View audit details">
+                <div className="space-y-2">
+                  {audits.length === 0 ? (
+                    <p className="text-xs text-text-muted">No audits on file.</p>
+                  ) : (
+                    audits.slice(0, 8).map((a: any) => (
+                      <details
+                        key={a.id}
+                        className="rounded-lg border border-line bg-bg-sunken/60 p-3 text-xs"
+                      >
+                        <summary className="cursor-pointer list-none">
+                          <span className="font-mono uppercase text-text-secondary">{a.stage}</span>
+                          <span
+                            className={`ml-2 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
+                              a.passed
+                                ? 'bg-emerald-500/15 text-emerald-300'
+                                : 'bg-red-500/15 text-red-300'
+                            }`}
+                          >
+                            {a.passed ? 'Pass' : 'Fail'}
+                          </span>
+                        </summary>
+                        <pre className="mt-2 max-h-48 overflow-auto rounded bg-bg-sunken p-2 text-[11px] text-text-secondary">
+                          {JSON.stringify(a.findings, null, 2)}
+                        </pre>
+                      </details>
+                    ))
+                  )}
                 </div>
-                <pre className="mt-2 max-h-48 overflow-auto rounded bg-zinc-50 p-2 text-[11px]">
-                  {JSON.stringify(a.findings, null, 2)}
+              </Advanced>
+            </div>
+          </Section>
+
+          <Section title="Performance">
+            <div className="grid grid-cols-3 gap-3">
+              <Tile
+                label="Success rate"
+                value={`${Math.round((skill.successRate || 0) * 100)}%`}
+                sub={reliabilityLabel(skill.successRate || 0)}
+              />
+              <Tile
+                label="Speed"
+                value={speedLabel(skill.avgLatencyMs || 0)}
+                sub={skill.avgLatencyMs ? `${skill.avgLatencyMs} ms avg` : undefined}
+              />
+              <Tile
+                label="Used"
+                value={`${formatUsage(skill.totalExecutions)}×`}
+                sub="times"
+              />
+            </div>
+
+            <div className="mt-4">
+              <Advanced label="View advanced stats">
+                <pre className="max-h-56 overflow-auto rounded-xl border border-line bg-bg-sunken/60 p-3 text-[11px] text-text-secondary">
+                  {JSON.stringify(
+                    {
+                      performanceScore: skill.performanceScore,
+                      ratingAvg: skill.ratingAvg,
+                      ratingCount: skill.ratingCount,
+                      totalExecutions: skill.totalExecutions,
+                      successRate: skill.successRate,
+                      avgLatencyMs: skill.avgLatencyMs,
+                      riskScore: skill.riskScore,
+                      certification: skill.certification,
+                    },
+                    null,
+                    2,
+                  )}
                 </pre>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+              </Advanced>
+            </div>
+          </Section>
 
-      <section>
-        <h2 className="mb-3 text-lg font-semibold">Reviews</h2>
-        {reviews.length === 0 ? (
-          <p className="text-sm text-zinc-500">No reviews yet. Run the skill to leave one.</p>
-        ) : (
-          <ul className="space-y-3">
-            {reviews.map((r: any) => (
-              <li key={r.id} className="rounded border border-zinc-200 bg-white p-4 text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium">{r.user?.name ?? 'Anon'}</span>
-                  <span>{'★'.repeat(r.rating)}<span className="text-zinc-300">{'★'.repeat(5 - r.rating)}</span></span>
+          <Section title="Reviews">
+            <div className="glass p-6">
+              <div className="flex items-center gap-4">
+                <div>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-3xl font-semibold">
+                      {skill.ratingAvg ? skill.ratingAvg.toFixed(1) : '—'}
+                    </span>
+                    <Stars value={skill.ratingAvg || 0} size={18} />
+                  </div>
+                  <p className="mt-1 text-xs text-text-muted">
+                    Trusted by {formatUsage(skill.ratingCount || 0)}{' '}
+                    {skill.ratingCount === 1 ? 'reviewer' : 'reviewers'}
+                  </p>
                 </div>
-                {r.body && <p className="mt-1 text-zinc-700">{r.body}</p>}
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+              </div>
+
+              <ul className="mt-6 space-y-3">
+                {reviews.length === 0 ? (
+                  <li className="rounded-xl border border-dashed border-line p-6 text-center text-sm text-text-secondary">
+                    No reviews yet. Run the skill to leave the first one.
+                  </li>
+                ) : (
+                  reviews.slice(0, 5).map((r: any) => (
+                    <li
+                      key={r.id}
+                      className="rounded-xl border border-line bg-bg-sunken/40 p-4"
+                    >
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="font-medium">{r.user?.name ?? 'Anonymous'}</span>
+                        <Stars value={r.rating} size={12} />
+                      </div>
+                      {r.body && (
+                        <p className="mt-2 text-sm text-text-secondary">{r.body}</p>
+                      )}
+                    </li>
+                  ))
+                )}
+              </ul>
+            </div>
+          </Section>
+        </div>
+
+        <aside className="lg:col-span-2">
+          <ExecutePanel
+            skillId={skill.id}
+            skillName={skill.name}
+            permissions={skill.permissionsRequired}
+            isFree={skill.isFree}
+          />
+        </aside>
+      </div>
     </div>
   );
 }
 
-function Stat({ label, value, sub }: { label: string; value: string; sub?: string }) {
+function Breadcrumbs({ name }: { name: string }) {
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-4">
-      <div className="text-xs uppercase tracking-wider text-zinc-500">{label}</div>
-      <div className="mt-1 text-xl font-bold">{value}</div>
-      {sub && <div className="text-xs text-zinc-500">{sub}</div>}
+    <nav className="text-xs text-text-muted">
+      <Link href="/browse" className="hover:text-text-secondary">
+        Explore
+      </Link>
+      <span className="px-2">/</span>
+      <span className="text-text-secondary">{name}</span>
+    </nav>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section>
+      <h2 className="mb-4 text-lg font-semibold tracking-tight">{title}</h2>
+      {children}
+    </section>
+  );
+}
+
+function Tile({ label, value, sub }: { label: string; value: string; sub?: string }) {
+  return (
+    <div className="glass p-4">
+      <div className="text-[11px] uppercase tracking-wider text-text-muted">{label}</div>
+      <div className="mt-1 text-lg font-semibold text-text-primary">{value}</div>
+      {sub && <div className="mt-0.5 text-xs text-text-muted">{sub}</div>}
     </div>
   );
 }
