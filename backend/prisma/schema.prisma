@@ -1,0 +1,191 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PricingModel {
+  FREE
+  PAID
+  SUBSCRIPTION
+  PER_EXECUTION
+}
+
+enum CertificationStatus {
+  UNVERIFIED
+  FUNCTION_VERIFIED
+  PERFORMANCE_VERIFIED
+  SECURITY_AUDITED
+  BATTLE_TESTED
+}
+
+enum ExecutionStatus {
+  QUEUED
+  RUNNING
+  SUCCEEDED
+  FAILED
+  KILLED
+  BLOCKED
+}
+
+enum AuditStage {
+  STATIC
+  SANDBOX
+  SCENARIO
+  PERFORMANCE
+  ADVERSARIAL
+}
+
+model User {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  name          String
+  isAdmin       Boolean        @default(false)
+  bio           String?
+  createdSkills Skill[]        @relation("CreatorSkills")
+  executions    Execution[]
+  reviews       Review[]
+  contributions Contribution[]
+  createdAt     DateTime       @default(now())
+}
+
+model Skill {
+  id                  String              @id @default(cuid())
+  name                String
+  slug                String              @unique
+  description         String
+  category            String
+  tags                String[]
+  creatorId           String
+  creator             User                @relation("CreatorSkills", fields: [creatorId], references: [id])
+  pricingModel        PricingModel        @default(FREE)
+  price               Decimal             @default(0) @db.Decimal(12, 4)
+  isFree              Boolean             @default(true)
+  currentVersion      Int                 @default(1)
+  permissionsRequired Json                @default("{}")
+  certification       CertificationStatus @default(CertificationStatus.UNVERIFIED)
+  riskScore           Int                 @default(0)
+  performanceScore    Float               @default(0)
+  successRate         Float               @default(0)
+  avgLatencyMs        Int                 @default(0)
+  totalExecutions     Int                 @default(0)
+  ratingAvg           Float               @default(0)
+  ratingCount         Int                 @default(0)
+  isDisabled          Boolean             @default(false)
+  killSwitch          Boolean             @default(false)
+  forkedFromId        String?
+  forkedFrom          Skill?              @relation("SkillForks", fields: [forkedFromId], references: [id])
+  forks               Skill[]             @relation("SkillForks")
+  versions            SkillVersion[]
+  executions          Execution[]
+  reviews             Review[]
+  auditResults        AuditResult[]
+  contributions       Contribution[]
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  @@index([category])
+  @@index([certification])
+  @@index([creatorId])
+}
+
+model SkillVersion {
+  id        String   @id @default(cuid())
+  skillId   String
+  skill     Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  version   Int
+  code      String
+  manifest  Json     @default("{}")
+  changelog String?
+  createdAt DateTime @default(now())
+
+  executions Execution[]
+
+  @@unique([skillId, version])
+}
+
+model Execution {
+  id          String          @id @default(cuid())
+  skillId     String
+  skill       Skill           @relation(fields: [skillId], references: [id])
+  versionId   String?
+  version     SkillVersion?   @relation(fields: [versionId], references: [id])
+  userId      String?
+  user        User?           @relation(fields: [userId], references: [id])
+  inputs      Json
+  output      Json?
+  status      ExecutionStatus @default(ExecutionStatus.QUEUED)
+  durationMs  Int?
+  apiCalls    Json?
+  error       String?
+  startedAt   DateTime        @default(now())
+  finishedAt  DateTime?
+  logs        Log[]
+  reviews     Review[]
+
+  @@index([skillId])
+  @@index([userId])
+  @@index([status])
+}
+
+model Log {
+  id          String    @id @default(cuid())
+  executionId String
+  execution   Execution @relation(fields: [executionId], references: [id], onDelete: Cascade)
+  level       String    @default("info")
+  message     String
+  metadata    Json?
+  prevHash    String?
+  hash        String
+  timestamp   DateTime  @default(now())
+
+  @@index([executionId])
+}
+
+model Review {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  skillId     String
+  skill       Skill     @relation(fields: [skillId], references: [id])
+  executionId String
+  execution   Execution @relation(fields: [executionId], references: [id])
+  rating      Int
+  body        String?
+  createdAt   DateTime  @default(now())
+
+  @@unique([userId, skillId, executionId])
+  @@index([skillId])
+}
+
+model AuditResult {
+  id               String     @id @default(cuid())
+  skillId          String
+  skill            Skill      @relation(fields: [skillId], references: [id])
+  versionId        String?
+  stage            AuditStage
+  passed           Boolean
+  riskScore        Int?
+  performanceScore Float?
+  findings         Json
+  createdAt        DateTime   @default(now())
+
+  @@index([skillId])
+  @@index([stage])
+}
+
+model Contribution {
+  id          String   @id @default(cuid())
+  skillId     String
+  skill       Skill    @relation(fields: [skillId], references: [id])
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  percentage  Float    @default(0)
+  description String?
+  createdAt   DateTime @default(now())
+
+  @@unique([skillId, userId])
+}

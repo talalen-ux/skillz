@@ -1,0 +1,94 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-skillz}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-skillz}
+      POSTGRES_DB: ${POSTGRES_DB:-skillz}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-skillz}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Builds the runner image used by the sandbox to execute untrusted skill code.
+  # Runs once and exits; on subsequent up's the image is reused.
+  runner-image:
+    build:
+      context: ./sandbox/runner
+    image: ${SANDBOX_RUNNER_IMAGE:-skillz-runner:latest}
+    command: ["true"]
+    restart: "no"
+
+  sandbox:
+    build:
+      context: ./sandbox
+    restart: unless-stopped
+    depends_on:
+      - runner-image
+    environment:
+      SANDBOX_RUNNER_IMAGE: ${SANDBOX_RUNNER_IMAGE:-skillz-runner:latest}
+      SANDBOX_DEFAULT_TIMEOUT_SEC: ${SANDBOX_DEFAULT_TIMEOUT_SEC:-15}
+      SANDBOX_MEMORY_LIMIT: ${SANDBOX_MEMORY_LIMIT:-256m}
+      SANDBOX_CPU_LIMIT: ${SANDBOX_CPU_LIMIT:-0.5}
+    ports:
+      - "8000:8000"
+    volumes:
+      # Sandbox needs Docker to spawn isolated runner containers.
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      sandbox:
+        condition: service_started
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://skillz:skillz@postgres:5432/skillz?schema=public}
+      REDIS_HOST: ${REDIS_HOST:-redis}
+      REDIS_PORT: ${REDIS_PORT:-6379}
+      SANDBOX_URL: ${SANDBOX_URL:-http://sandbox:8000}
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-prod}
+      PORT: ${BACKEND_PORT:-4000}
+    ports:
+      - "4000:4000"
+    command: ["sh", "-c", "npx prisma db push --skip-generate --accept-data-loss && node dist/main.js"]
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000}
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000}
+    ports:
+      - "3000:3000"
+
+volumes:
+  pgdata:
